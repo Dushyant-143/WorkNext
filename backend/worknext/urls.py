@@ -1,3 +1,4 @@
+import os
 from django.contrib import admin
 from django.urls import path, include
 from django.http import JsonResponse
@@ -10,12 +11,12 @@ def setup(request):
         call_command('migrate', stdout=out, verbosity=2)
         
         from users.models import User
-        # Delete existing admin and create fresh owner account
-        User.objects.filter(username='admin').delete()
+        username = os.getenv('SETUP_USERNAME', 'admin')
+        User.objects.filter(username=username).delete()
         u = User.objects.create_superuser(
-            username='admin',
-            email='admin@worknext.com',
-            password='Admin@123'
+            username=username,
+            email=os.getenv('SETUP_EMAIL', 'admin@worknext.com'),
+            password=os.getenv('SETUP_PASSWORD', 'Admin@123')
         )
         u.role = 'owner'
         u.save()
@@ -24,10 +25,12 @@ def setup(request):
         import traceback
         return JsonResponse({'error': str(e), 'trace': traceback.format_exc()})
 
+SETUP_PATH = os.getenv('SETUP_PATH', 'setup')
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/auth/', include('users.urls')),
     path('api/v1/tasks/', include('tasks.urls')),
     path('api/v1/dashboard/', include('dashboard.urls')),
-    path('setup/', setup),
+    path(f'{SETUP_PATH}/', setup),
 ]
