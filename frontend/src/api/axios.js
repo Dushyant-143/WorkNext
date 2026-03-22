@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const BASE = 'https://worknext-85sv.onrender.com'
 
 const api = axios.create({
   baseURL: `${BASE}/api/v1`,
@@ -28,7 +28,6 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const original = error.config
-
     if (error.response?.status === 401 && !original._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -38,17 +37,14 @@ api.interceptors.response.use(
           return api(original)
         })
       }
-
       original._retry = true
       isRefreshing = true
-
       const refresh = localStorage.getItem('refresh_token')
       if (!refresh) {
         localStorage.removeItem('access_token')
         window.location.href = '/role-select'
         return Promise.reject(error)
       }
-
       try {
         const res = await axios.post(`${BASE}/api/v1/auth/token/refresh/`, { refresh })
         const newToken = res.data.access
@@ -66,7 +62,6 @@ api.interceptors.response.use(
         isRefreshing = false
       }
     }
-
     return Promise.reject(error)
   }
 )
